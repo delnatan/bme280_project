@@ -19,3 +19,6 @@ WEB_PORT = 8000
 # Logging
 LOG_DIR = BASE_DIR / "logs"
 LOG_LEVEL = "INFO"
+
+# Data retention
+CLEANUP_DAYS = 90
