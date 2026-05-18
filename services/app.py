@@ -105,8 +105,8 @@ async def get_current_reading():
 
 
 @app.get("/api/history")
-async def get_history(hours: int = 24):
-    return await asyncio.to_thread(_db.get_recent_readings, hours)
+async def get_history(hours: int = 24, max_points: int | None = None):
+    return await asyncio.to_thread(_db.get_recent_readings, hours, max_points)
 
 
 @app.get("/api/stats")

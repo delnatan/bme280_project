@@ -58,13 +58,33 @@ class SensorDB:
             row = cursor.fetchone()
             return dict(row) if row else None
 
-    def get_recent_readings(self, hours=24):
+    def get_recent_readings(self, hours=24, max_points=None):
         with self.get_connection() as conn:
             conn.row_factory = sqlite3.Row
-            cursor = conn.execute(
-                "SELECT * FROM readings WHERE timestamp > datetime('now', ?) ORDER BY timestamp DESC",
-                (f"-{hours} hours",),
-            )
+            if max_points is None:
+                cursor = conn.execute(
+                    "SELECT * FROM readings WHERE timestamp > datetime('now', ?) ORDER BY timestamp",
+                    (f"-{hours} hours",),
+                )
+                return [dict(row) for row in cursor.fetchall()]
+
+            # Bucket-average to target approximately max_points.
+            # REPLACE normalises old ISO-format timestamps (T separator) for strftime('%s').
+            bucket_seconds = max(300, (hours * 3600) // max_points)
+            cursor = conn.execute("""
+                SELECT
+                    datetime(
+                        CAST(strftime('%s', REPLACE(timestamp, 'T', ' ')) / ? AS INTEGER) * ?,
+                        'unixepoch'
+                    ) AS timestamp,
+                    ROUND(AVG(temperature), 2) AS temperature,
+                    ROUND(AVG(pressure),    2) AS pressure,
+                    ROUND(AVG(humidity),    2) AS humidity
+                FROM readings
+                WHERE timestamp > datetime('now', ?)
+                GROUP BY CAST(strftime('%s', REPLACE(timestamp, 'T', ' ')) / ? AS INTEGER)
+                ORDER BY timestamp
+            """, (bucket_seconds, bucket_seconds, f"-{hours} hours", bucket_seconds))
             return [dict(row) for row in cursor.fetchall()]
 
     def delete_old_readings(self, days=90) -> int:
