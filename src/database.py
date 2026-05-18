@@ -63,7 +63,8 @@ class SensorDB:
             conn.row_factory = sqlite3.Row
             if max_points is None:
                 cursor = conn.execute(
-                    "SELECT * FROM readings WHERE timestamp > datetime('now', ?) ORDER BY timestamp",
+                    "SELECT * FROM readings WHERE timestamp > datetime('now', ?)"
+                    " ORDER BY REPLACE(timestamp, 'T', ' ')",
                     (f"-{hours} hours",),
                 )
                 return [dict(row) for row in cursor.fetchall()]
