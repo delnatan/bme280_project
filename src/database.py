@@ -83,7 +83,7 @@ class SensorDB:
                 FROM readings
                 WHERE timestamp > datetime('now', ?)
                 GROUP BY CAST(strftime('%s', REPLACE(timestamp, 'T', ' ')) / ? AS INTEGER)
-                ORDER BY timestamp
+                ORDER BY 1
             """, (bucket_seconds, bucket_seconds, f"-{hours} hours", bucket_seconds))
             return [dict(row) for row in cursor.fetchall()]
 
